@@ -11,6 +11,7 @@ package org.superfuntime.smartreload;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 
@@ -23,7 +24,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 public class SmartReload extends JavaPlugin {
     WatchService watcher;
-    Path pluginsFolder = Paths.get("/plugins");
+    Path pluginsFolder = Paths.get(new File("plugins/").toURI());
 
     @SuppressWarnings("unchecked")
     @Override
@@ -31,7 +32,7 @@ public class SmartReload extends JavaPlugin {
         try {
             watcher = FileSystems.getDefault().newWatchService();
             pluginsFolder.register(watcher, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-            Bukkit.getLogger().info("Watching plugins folder for changes.");
+            getLogger().info("Watching plugins folder for changes.");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,8 +58,7 @@ public class SmartReload extends JavaPlugin {
                     type = "DELETED";
                 else if (event.kind() == ENTRY_MODIFY)
                     type = "MODIFIED";
-                Bukkit.getLogger()
-                        .info(String.format("Detected file change: %s(%s). Reloading.", name.toString(), type));
+                getLogger().info(String.format("Detected file change: %s(%s). Reloading.", name.toString(), type));
                 Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "reload");
             }
         }
