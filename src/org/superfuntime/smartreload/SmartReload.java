@@ -36,31 +36,39 @@ public class SmartReload extends JavaPlugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (; ; ) {
-            WatchKey key;
-            try {
-                key = watcher.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+        new Thread() {
+            @Override
+            public void run() {
+                for (; ; ) {
+                    WatchKey key;
+                    try {
+                        key = watcher.take();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        if (event.kind() == OVERFLOW)
+                            continue;
+                        WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                        Path name = ev.context();
+                        if (!name.toString().endsWith(".jar"))
+                            continue;
+                        String type = "";
+                        if (event.kind() == ENTRY_CREATE)
+                            type = "CREATED";
+                        else if (event.kind() == ENTRY_DELETE)
+                            type = "DELETED";
+                        else if (event.kind() == ENTRY_MODIFY)
+                            type = "MODIFIED";
+                        getLogger().info(String.format("Detected file change: %s(%s). Reloading.",
+                                                       name.toString(),
+                                                       type));
+                        Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "reload");
+                    }
+                }
             }
-            for (WatchEvent<?> event : key.pollEvents()) {
-                if (event.kind() == OVERFLOW)
-                    continue;
-                WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                Path name = ev.context();
-                if (!name.toString().endsWith(".jar"))
-                    continue;
-                String type = "";
-                if (event.kind() == ENTRY_CREATE)
-                    type = "CREATED";
-                else if (event.kind() == ENTRY_DELETE)
-                    type = "DELETED";
-                else if (event.kind() == ENTRY_MODIFY)
-                    type = "MODIFIED";
-                getLogger().info(String.format("Detected file change: %s(%s). Reloading.", name.toString(), type));
-                Bukkit.dispatchCommand(Bukkit.getServer().getConsoleSender(), "reload");
-            }
-        }
+        }.start();
+
     }
 }
